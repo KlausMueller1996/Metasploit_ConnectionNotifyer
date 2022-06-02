@@ -61,8 +61,7 @@ module Msf
 
 		  # Actions for when a session is created
 			def on_session_open(session)
-				#print_status("Session received, sending push notification")
-				sendslack("#{@user_name} You did it! New session... Source: #{$source}; Session: #{session.sid}; Platform: #{session.platform}; Type: #{session.type}", "http://emojipedia-us.s3.amazonaws.com/cache/a3/d8/a3d8a52b21c3e628e87001c9d5a2d25d.png", session.sid, "open")
+				sendslack("#{@user_name} Session #{session.sid} opened on tunnel #{session.tunnel_to_s}.", "", session.sid, "open")
 				return
 			end
 
@@ -70,11 +69,16 @@ module Msf
 			# Actions for when the session is closed
 			def on_session_close(session,reason = "")
 				begin
-					#print_status("Session:#{session.sid} Type:#{session.type} is shutting down")
+
+# TODO:
+#  Session with no session_host/target_host/tunnel_peer. Session Info: #<Session:meterpreter 127.0.0.1 () >
+# [06/01/2022 15:53:35] [w(0)] core: Session 187 has died
+# [06/01/2022 15:54:04] [d(0)] core: Session 187 failed to negotiate TLV encryption
+
 					if reason == ""
 						reason = "unknown, may have been killed with sessions -k"
 					end
-					sendslack("#{@user_name} You have made a huge mistake... Source: #{$source}; Session: #{session.sid}; Reason: #{session.type} is shutting down - #{reason}", "http://emojipedia-us.s3.amazonaws.com/cache/03/e4/03e423c7d30403af03aecbf20276364b.png", session.sid, "close")
+					sendslack("#{@user_name} Session #{session.sid} on tunnel #{session.tunnel_to_s} has been closed because: #{reason}." , "", session.sid, "close")
 				rescue
 					return
 				end
@@ -93,7 +97,6 @@ module Msf
 			# This is an issue with Metasploit triggering events multiple times very quickly when a session opens or closes
 			def sendslack(message, icon, session_id, event)
 				if event == "open" and $opened.exclude?(session_id)
-					print_status(message)
 					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}', 'icon_emoji': '#{icon}'}"
 					url = URI.parse(@webhook_url)
 					http = Net::HTTP.new(url.host, url.port)
@@ -101,7 +104,6 @@ module Msf
 					resp = http.post(url.path, data)
 					$opened.push(session_id)
 				elsif event == "close" and $closed.exclude?(session_id)
-					print_status(message)
 					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}', 'icon_emoji': '#{icon}'}"
 					url = URI.parse(@webhook_url)
 					http = Net::HTTP.new(url.host, url.port)
