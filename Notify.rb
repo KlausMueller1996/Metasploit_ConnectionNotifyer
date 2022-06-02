@@ -59,12 +59,9 @@ module Msf
 			$closed = Array.new
 
 
-		  # Actions for when a session is created
+			# Actions for when a session is created
 			def on_session_open(session)
-				if session.tunnel_peer = "" or sessions.tunnel_peer = "127.0.0.1" 
-					return
-				end
-				sendslack("#{@user_name} Session #{session.sid} opened from #{session.tunnel_peer}.", "", session.sid, "open")
+				sendslack("#{@user_name} Session #{session.sid} opened on tunnel #{session.tunnel_to_s}.", "", session.sid, "open")
 				return
 			end
 
@@ -72,17 +69,19 @@ module Msf
 			# Actions for when the session is closed
 			def on_session_close(session,reason = "")
 				begin
+					isLocalHost = session.tunnel_peer.starts_with?("127.0.0.1")					
+					isOwnIP = sessions.tunnel_peer..starts_with?("XX.XX.XX.XX")
 
-# TODO:
-#  Session with no session_host/target_host/tunnel_peer. Session Info: #<Session:meterpreter 127.0.0.1 () >
-# [06/01/2022 15:53:35] [w(0)] core: Session 187 has died
-# [06/01/2022 15:54:04] [d(0)] core: Session 187 failed to negotiate TLV encryption
-
+					if isLocalHost or isOwnIP
+						print_status("skipping")
+						return
+					end 
 					if reason == ""
 						reason = "unknown, may have been killed with sessions -k"
 					end
-					sendslack("#{@user_name} Session #{session.sid} from #{session.tunnel_peer} has been closed because: #{reason}." , "", session.sid, "close")
-				rescue
+					sendslack("#{@user_name} Session #{session.sid} on tunnel #{session.tunnel_to_s} has been closed because: #{reason}." , "", session.sid, "close")
+				rescue Exception => e
+					print_status("caught Exception #{e}")
 					return
 				end
 				return
@@ -100,14 +99,16 @@ module Msf
 			# This is an issue with Metasploit triggering events multiple times very quickly when a session opens or closes
 			def sendslack(message, icon, session_id, event)
 				if event == "open" and $opened.exclude?(session_id)
-					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}', 'icon_emoji': '#{icon}'}"
+					#print_status(message)
+					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}' }"
 					url = URI.parse(@webhook_url)
 					http = Net::HTTP.new(url.host, url.port)
 					http.use_ssl = true
 					resp = http.post(url.path, data)
 					$opened.push(session_id)
 				elsif event == "close" and $closed.exclude?(session_id)
-					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}', 'icon_emoji': '#{icon}'}"
+					#print_status(message)
+					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}'}"
 					url = URI.parse(@webhook_url)
 					http = Net::HTTP.new(url.host, url.port)
 					http.use_ssl = true
