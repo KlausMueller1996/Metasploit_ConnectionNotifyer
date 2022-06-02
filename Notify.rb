@@ -58,14 +58,16 @@ module Msf
 
 			# Actions for when a session is created
 			def on_session_open(session)
+				print_status("Opening session #{session.sid} from: #{session.tunnel_peer}")					
+				$opened.push(session.sid)
 				sendslack("#{@user_name} Session #{session.sid} opened from IP #{session.tunnel_peer}.", session.sid, "open")
-				$opened.push(sessions.sid)
 				return
 			end
 
 			# Actions for when the session is closed
 			def on_session_close(session,reason = "")
 				begin
+					print_status("Closing session: #{session.sid}")					
 					if $opened.include?(session.sid)
 						$opened.delete(session.sid)
 						if reason == ""
