@@ -61,7 +61,10 @@ module Msf
 
 		  # Actions for when a session is created
 			def on_session_open(session)
-				sendslack("#{@user_name} Session #{session.sid} opened on tunnel #{session.tunnel_to_s}.", "", session.sid, "open")
+				if session.tunnel_peer = "" or sessions.tunnel_peer = "127.0.0.1" 
+					return
+				end
+				sendslack("#{@user_name} Session #{session.sid} opened from #{session.tunnel_peer}.", "", session.sid, "open")
 				return
 			end
 
@@ -78,7 +81,7 @@ module Msf
 					if reason == ""
 						reason = "unknown, may have been killed with sessions -k"
 					end
-					sendslack("#{@user_name} Session #{session.sid} on tunnel #{session.tunnel_to_s} has been closed because: #{reason}." , "", session.sid, "close")
+					sendslack("#{@user_name} Session #{session.sid} from #{session.tunnel_peer} has been closed because: #{reason}." , "", session.sid, "close")
 				rescue
 					return
 				end
