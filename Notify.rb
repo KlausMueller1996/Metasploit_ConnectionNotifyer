@@ -17,8 +17,8 @@ module Msf
 		# Checks if the constant is already set, if not it is set
 		if not defined?(Notify_yaml)
 			Notify_yaml = "#{Msf::Config.get_config_root}/Notify.yaml"
+			
 		end
-
 
 		# Initialize the Class
 		def initialize(framework, opts)
@@ -54,35 +54,29 @@ module Msf
 			@user_name = nil
 			@channel = "#<CHANNEL_NAME>" # An existing channel or one setup for the alerts
 			@bot_name = "Shell Herder" # Whatever you want the bot's name to be
-			$source = nil
 			$opened = Array.new
-			$closed = Array.new
-
 
 			# Actions for when a session is created
 			def on_session_open(session)
-				sendslack("#{@user_name} Session #{session.sid} opened on tunnel #{session.tunnel_to_s}.", "", session.sid, "open")
+				sendslack("#{@user_name} Session #{session.sid} opened from IP #{session.tunnel_peer}.", session.sid, "open")
+				$opened.push(sessions.sid)
 				return
 			end
-
 
 			# Actions for when the session is closed
 			def on_session_close(session,reason = "")
 				begin
-					isLocalHost = session.tunnel_peer.starts_with?("127.0.0.1")					
-					isOwnIP = sessions.tunnel_peer..starts_with?("XX.XX.XX.XX")
-
-					if isLocalHost or isOwnIP
-						print_status("skipping")
-						return
+					if $opened.include?(session.sid)
+						$opened.delete(session.sid)
+						if reason == ""
+							reason = "unknown, may have been killed with sessions -k"
+						end
+						sendslack("#{@user_name} Session #{session.sid} on IP  #{session.tunnel_peer} has been closed because: #{reason}." , session.sid, "close")
+					else
+						print_status("Closing session without opening it. Tunnel: #{session.tunnel_peer}")					
 					end 
-					if reason == ""
-						reason = "unknown, may have been killed with sessions -k"
-					end
-					sendslack("#{@user_name} Session #{session.sid} on tunnel #{session.tunnel_to_s} has been closed because: #{reason}." , "", session.sid, "close")
 				rescue Exception => e
 					print_status("caught Exception #{e}")
-					return
 				end
 				return
 			end
@@ -97,7 +91,7 @@ module Msf
 			# Primary function for sending Slack notifications - creates the "notifier" and sends the "ping"
 			# The arrays and "exclude?" checks prevent spam messages as a result of on_session_* triggering many times
 			# This is an issue with Metasploit triggering events multiple times very quickly when a session opens or closes
-			def sendslack(message, icon, session_id, event)
+			def sendslack(message, session_id, event)
 				if event == "open" and $opened.exclude?(session_id)
 					#print_status(message)
 					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}' }"
@@ -183,7 +177,7 @@ module Msf
 				print_status("Sending tests message")
 				if read_settings()
 					self.framework.events.add_session_subscriber(self)
-					data = "{'text': '#{@user_name} Metasploit is online on #{$source}! Hack the Planet!', 'channel': '#{@channel}', 'username': '#{@bot_name}', 'icon_emoji': 'http://emojipedia-us.s3.amazonaws.com/cache/46/2e/462e369e465fd7b52537f6370227b52b.png'}"
+					data = "{'text': '#{@user_name} Metasploit is online on #{$source}! Hack the Planet!', 'channel': '#{@channel}', 'username': '#{@bot_name}'}"
 					url = URI.parse(@webhook_url)
 					http = Net::HTTP.new(url.host, url.port)
 					http.use_ssl = true
