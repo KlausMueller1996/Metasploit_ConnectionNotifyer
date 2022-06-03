@@ -17,9 +17,9 @@ The ShellHerder plugin can be used like any other Metasploit plugin. Begin by lo
 
   [\*] Successfully loaded plugin: notify
 
-  msf exploit(handler) > notify_set_user @chrismaddalena
+  msf exploit(handler) > notify_set_user @<your user name>
 
-  [\*] Setting the Slack handle to @chrismaddalena
+  [\*] Setting the Slack handle to @<your user name>
 
   msf exploit(handler) > notify_set_webhook <Your hooks.slack.com URL>
 
@@ -32,24 +32,3 @@ The ShellHerder plugin can be used like any other Metasploit plugin. Begin by lo
   msf exploit(handler) > notify_test
 
   [\*] Sending tests message
-
-  msf exploit(handler) >
-
-  [\*] Encoded stage with x86/shikata_ga_naiv
-
-  [\*] Sending encoded stage (958029 bytes) to 10.10.1.10
-
-  [\*] Meterpreter session 1 opened (10.10.1.11:4444 -> 10.10.1.10:49713) at 2016-11-15 10:54:23 -0500
-
-  msf exploit(handler) > sessions -k 1
-
-  [\*] Killing the following session(s): 1
-
-  [\*] Killing session 1
-
-  [\*] 10.10.1.10 - Meterpreter session 1 closed.
-
-This will result in three Slack messages, one confirming setup (notify_test) and one each for the new session and the session being killed.
-
-<@username> You did it! New session... Source: Test_VM; Session: 1; Platform: Windows; Type: Meterpreter"
-<@username> You have made a huge mistake... Source: Test_VM; Session: 1; Reason: Meterpreter is shutting down
