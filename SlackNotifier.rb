@@ -53,32 +53,39 @@ module Msf
 			@webhook_url =  nil
 			@user_name = nil
 			@channel = "#<CHANNEL_NAME>" # An existing channel or one setup for the alerts
-			@bot_name = "Shell Herder" # Whatever you want the bot's name to be
-			$opened = Array.new
+			@bot_name = "Slack Notifier" # Whatever you want the bot's name to be
+			$active = Array.new
 
 			# Actions for when a session is created
 			def on_session_open(session)
-				print_status("Opening session #{session.sid} from: #{session.tunnel_peer}")					
-				$opened.push(session.sid)
-				sendslack("#{@user_name} Session #{session.sid} opened from IP #{session.tunnel_peer}.", session.sid, "open")
+				begin
+					if $active.exclude?(session.id)
+						#print_status("Opening session from: #{session.tunnel_peer}")					
+						sendslack("#{@user_name} Session #{session.sid} opened from IP #{session.tunnel_peer}.", session.sid, "open")
+						$active.push(session.sid)
+					else
+					end
+				rescue ::Exception => e
+					print_status("caught Exception #{e} on opening")
+				end
 				return
 			end
 
 			# Actions for when the session is closed
 			def on_session_close(session,reason = "")
 				begin
-					print_status("Closing session: #{session.sid}")					
-					if $opened.include?(session.sid)
-						$opened.delete(session.sid)
-						if reason == ""
-							reason = "unknown, may have been killed with sessions -k"
-						end
+					#print_status("Closing session: #{session.sid}")					
+					if $active.include?(session.sid)
+						#print_status("Session found: #{session.sid}")					
 						sendslack("#{@user_name} Session #{session.sid} on IP  #{session.tunnel_peer} has been closed because: #{reason}." , session.sid, "close")
+						#print_status("Message sent")					
+						$active.delete(session.sid)
+						#print_status("Session deleted: #{session.sid}")					
 					else
-						print_status("Closing session without opening it. Tunnel: #{session.tunnel_peer}")					
+						#print_status("Closing session without opening it. Sid: #{session.sid}")					
 					end 
-				rescue Exception => e
-					print_status("caught Exception #{e}")
+				rescue ::Exception => e
+					print_status("caught Exception #{e} on closing")
 				end
 				return
 			end
@@ -94,22 +101,18 @@ module Msf
 			# The arrays and "exclude?" checks prevent spam messages as a result of on_session_* triggering many times
 			# This is an issue with Metasploit triggering events multiple times very quickly when a session opens or closes
 			def sendslack(message, session_id, event)
-				if event == "open" and $opened.exclude?(session_id)
-					#print_status(message)
+				if event == "open" 
 					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}' }"
 					url = URI.parse(@webhook_url)
 					http = Net::HTTP.new(url.host, url.port)
 					http.use_ssl = true
 					resp = http.post(url.path, data)
-					$opened.push(session_id)
-				elsif event == "close" and $closed.exclude?(session_id)
-					#print_status(message)
+				elsif event == "close" 
 					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}'}"
 					url = URI.parse(@webhook_url)
 					http = Net::HTTP.new(url.host, url.port)
 					http.use_ssl = true
 					resp = http.post(url.path, data)
-					$closed.push(session_id)
 				end
 			end
 
