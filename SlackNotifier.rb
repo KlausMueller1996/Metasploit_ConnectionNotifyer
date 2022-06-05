@@ -60,9 +60,9 @@ module Msf
 			def on_session_open(session)
 				begin
 					if $active.exclude?(session.id)
+						$active.push(session.sid)
 						#print_status("Opening session from: #{session.tunnel_peer}")					
 						sendslack("#{@user_name} Session #{session.sid} opened from IP #{session.tunnel_peer}.", session.sid, "open")
-						$active.push(session.sid)
 					else
 					end
 				rescue ::Exception => e
