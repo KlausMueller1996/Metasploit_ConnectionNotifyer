@@ -1,9 +1,7 @@
 # Metasploit Slack Notifier
-This Metasploit plugin was created to monitor sessions, new ones and those closing. The idea is to provide a way for consultants to see new sessions coming in when they might not have access to their listener(s). Perhaps you have stepped away from your computer with an active phishing campaign? Maybe you're using a Rubber Ducky in an office and want to get a mobile notification if your payload succeeds?
+This Metasploit plugin was created to monitor sessions, new ones and those closing. The idea is to provide a way for consultants to see new sessions coming in when they might not have access to their listener(s). 
 
 SlackNotifier uses session subscriptions to monitor activity and then sends an alert to Slack using Slack's Incoming WebHooks. The alert is sent using the WebHook URL and a POST request and will tag a specified username (you could also use @channel or @here) and provide the computer name of the server with the session (if set).
-
-Ruby gems like slack-notifier are not used because that would require installing a dependency and telling Metasploit to use it. Unfortunately, this can be an annoying process (getting msfconsole to recognize the gem) and your changes can be wiped out when msfconsole is updated. The HTTP requests work just as well and make all of this simpler.
 
 ## Setup
 Place the SlackNotifier.rb file inside "/usr/share/metasploit-framework/plugins/" or a folder you have linked to this primary plugins folder.
@@ -11,7 +9,7 @@ Place the SlackNotifier.rb file inside "/usr/share/metasploit-framework/plugins/
 Then create a new Incoming WebHook for Slack. You may also want to create a new channel for the alerts, like #shell-alerts.
 
 ## Sample Usage
-The ShellHerder plugin can be used like any other Metasploit plugin. Begin by loading ShellHerder and setting your options. Then you will need to run notify_start to subscribe to session events. See the following example:
+The SlackNotifier plugin can be used like any other Metasploit plugin. Begin by loading ShellHerder and setting your options. Then you will need to run notify_start to subscribe to session events. See the following example:
 
   msf exploit(handler) > load SlackNotifier
 
