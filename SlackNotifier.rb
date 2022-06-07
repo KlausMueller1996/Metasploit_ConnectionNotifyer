@@ -60,10 +60,9 @@ module Msf
 			def on_session_open(session)
 				begin
 					if $active.exclude?(session.id)
-						$active.push(session.sid)
 						#print_status("Opening session from: #{session.tunnel_peer}")					
 						sendslack("#{@user_name} Session #{session.sid} opened from IP #{session.tunnel_peer}.", session.sid, "open")
-					else
+						$active.push(session.sid)
 					end
 				rescue ::Exception => e
 					print_status("caught Exception #{e} on opening")
@@ -101,7 +100,8 @@ module Msf
 			# The arrays and "exclude?" checks prevent spam messages as a result of on_session_* triggering many times
 			# This is an issue with Metasploit triggering events multiple times very quickly when a session opens or closes
 			def sendslack(message, session_id, event)
-				if event == "open" 
+				if event == "open" and $active.exclude?(session.id)
+					$active.push(session.sid)
 					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}' }"
 					url = URI.parse(@webhook_url)
 					http = Net::HTTP.new(url.host, url.port)
