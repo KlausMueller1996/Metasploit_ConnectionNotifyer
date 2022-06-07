@@ -62,7 +62,6 @@ module Msf
 					if $active.exclude?(session.id)
 						#print_status("Opening session from: #{session.tunnel_peer}")					
 						sendslack("#{@user_name} Session #{session.sid} opened from IP #{session.tunnel_peer}.", session.sid, "open")
-						$active.push(session.sid)
 					end
 				rescue ::Exception => e
 					print_status("caught Exception #{e} on opening")
