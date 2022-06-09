@@ -61,7 +61,6 @@ module Msf
 				begin
 					if $active.exclude?(session.id)
 						$active.push(session.sid)
-						#print_status("Opening session from: #{session.tunnel_peer}")					
 						sendslack("#{@user_name} Session #{session.sid} opened from IP #{session.tunnel_peer}.", session.sid, "open")
 					else
 					end
@@ -74,13 +73,9 @@ module Msf
 			# Actions for when the session is closed
 			def on_session_close(session,reason = "")
 				begin
-					#print_status("Closing session: #{session.sid}")					
 					if $active.include?(session.sid)
-						#print_status("Session found: #{session.sid}")					
 						sendslack("#{@user_name} Session #{session.sid} on IP  #{session.tunnel_peer} has been closed because: #{reason}." , session.sid, "close")
-						#print_status("Message sent")					
 						$active.delete(session.sid)
-						#print_status("Session deleted: #{session.sid}")					
 					else
 						#print_status("Closing session without opening it. Sid: #{session.sid}")					
 					end 
