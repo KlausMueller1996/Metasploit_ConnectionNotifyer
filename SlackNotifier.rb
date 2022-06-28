@@ -59,11 +59,7 @@ module Msf
 			# Actions for when a session is created
 			def on_session_open(session)
 				begin
-					if $active.exclude?(session.id)
-						$active.push(session.sid)
-						sendslack("#{@user_name} Session #{session.sid} opened from IP #{session.tunnel_peer}.", session.sid, "open")
-					else
-					end
+					sendslack("Session #{session.sid} opened from IP #{session.session_host}.", session.sid, "open")
 				rescue ::Exception => e
 					print_status("caught Exception #{e} on opening")
 				end
@@ -73,12 +69,7 @@ module Msf
 			# Actions for when the session is closed
 			def on_session_close(session,reason = "")
 				begin
-					if $active.include?(session.sid)
-						sendslack("#{@user_name} Session #{session.sid} on IP  #{session.tunnel_peer} has been closed because: #{reason}." , session.sid, "close")
-						$active.delete(session.sid)
-					else
-						#print_status("Closing session without opening it. Sid: #{session.sid}")					
-					end 
+					sendslack("Session #{session.sid} on IP  #{session.tunnel_peer} has been closed." , session.sid, "close")
 				rescue ::Exception => e
 					print_status("caught Exception #{e} on closing")
 				end
@@ -97,17 +88,23 @@ module Msf
 			# This is an issue with Metasploit triggering events multiple times very quickly when a session opens or closes
 			def sendslack(message, session_id, event)
 				if event == "open" 
-					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}' }"
-					url = URI.parse(@webhook_url)
-					http = Net::HTTP.new(url.host, url.port)
-					http.use_ssl = true
-					resp = http.post(url.path, data)
+					if $active.exclude?(session_id)
+						$active.push(session_id)
+  						data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}' }"
+						url = URI.parse(@webhook_url)
+						http = Net::HTTP.new(url.host, url.port)
+						http.use_ssl = true
+						resp = http.post(url.path, data)
+					end
 				elsif event == "close" 
-					data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}'}"
-					url = URI.parse(@webhook_url)
-					http = Net::HTTP.new(url.host, url.port)
-					http.use_ssl = true
-					resp = http.post(url.path, data)
+					if $active.include?(session_id)
+						$active.delete(session_id)
+						data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}'}"
+						url = URI.parse(@webhook_url)
+						http = Net::HTTP.new(url.host, url.port)
+						http.use_ssl = true
+						resp = http.post(url.path, data)
+					end
 				end
 			end
 
@@ -177,7 +174,7 @@ module Msf
 				print_status("Sending tests message")
 				if read_settings()
 					self.framework.events.add_session_subscriber(self)
-					data = "{'text': '#{@user_name} Metasploit is online on #{$source}! Hack the Planet!', 'channel': '#{@channel}', 'username': '#{@bot_name}'}"
+					data = "{'text': 'msf 1 is online on #{$source}! Hack the Planet!', 'channel': '#{@channel}', 'username': '#{@bot_name}'}"
 					url = URI.parse(@webhook_url)
 					http = Net::HTTP.new(url.host, url.port)
 					http.use_ssl = true
