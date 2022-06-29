@@ -59,7 +59,7 @@ module Msf
 			# Actions for when a session is created
 			def on_session_open(session)
 				begin
-					sendslack("Session #{session.sid} opened from IP #{session.session_host}.", session.sid, "open")
+					sendslack("*New Session* #{session.sid} from #{session.session_host}.", session.sid, "open")
 				rescue ::Exception => e
 					print_status("caught Exception #{e} on opening")
 				end
@@ -69,7 +69,7 @@ module Msf
 			# Actions for when the session is closed
 			def on_session_close(session,reason = "")
 				begin
-					sendslack("Session #{session.sid} on IP  #{session.tunnel_peer} has been closed." , session.sid, "close")
+					sendslack("Session #{session.sid} has been closed." , session.sid, "close")
 				rescue ::Exception => e
 					print_status("caught Exception #{e} on closing")
 				end
@@ -77,7 +77,7 @@ module Msf
 			end
 
 
-			# Sets the name of the plguin
+			# Sets the name of the plugin
 			def name
 				"notify"
 			end
@@ -99,7 +99,7 @@ module Msf
 				elsif event == "close" 
 					if $active.include?(session_id)
 						$active.delete(session_id)
-						data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}'}"
+						data = "{'text': '#{message}', 'channel': '#{@channel}', 'username': '#{@bot_name}' }"
 						url = URI.parse(@webhook_url)
 						http = Net::HTTP.new(url.host, url.port)
 						http.use_ssl = true
@@ -174,7 +174,7 @@ module Msf
 				print_status("Sending tests message")
 				if read_settings()
 					self.framework.events.add_session_subscriber(self)
-					data = "{'text': 'msf 1 is online on #{$source}! Hack the Planet!', 'channel': '#{@channel}', 'username': '#{@bot_name}'}"
+					data = "{'text': 'msf is online on #{$source}! Hack the Planet!', 'channel': '#{@channel}', 'username': '#{@bot_name}' }"
 					url = URI.parse(@webhook_url)
 					http = Net::HTTP.new(url.host, url.port)
 					http.use_ssl = true
